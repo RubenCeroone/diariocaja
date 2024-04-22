@@ -11,6 +11,7 @@ class DiarioCaja extends Model
     use HasFactory;
  
     protected $fillable = [
+        'dia',
         'fecha',
         'venta_revo_iva_incluido',
         'caja_fuerte_inicio',

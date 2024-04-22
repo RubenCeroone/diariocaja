@@ -13,6 +13,7 @@ return new class extends Migration
     {
             Schema::create('diario_caja', function (Blueprint $table) {
                 $table->id();
+                $table->string('dia');
                 $table->date('fecha');
                 $table->decimal('venta_revo_iva_incluido', 10, 2);
                 $table->decimal('caja_fuerte_inicio', 10, 2);

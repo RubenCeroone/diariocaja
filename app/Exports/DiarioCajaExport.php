@@ -8,20 +8,26 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use DateTime;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Carbon\Carbon;
+use DateTime;
 
 class BoxDiariesExport implements FromCollection, WithStyles
 {
     protected $diarioCajas;
+    protected $startDate;
+    protected $endDate;
+    protected $typeCenter;
 
-    public function __construct()
+    public function __construct($startDate, $endDate, $typeCenter)
     {
+        $this->startDate = $startDate;
+        $this->endDate = $endDate;
+        $this->typeCenter = $typeCenter;
         $this->diarioCajas = BoxDiaries::all();
         $this->diarioCajas->prepend(new BoxDiaries());
     }
@@ -123,16 +129,16 @@ class BoxDiariesExport implements FromCollection, WithStyles
         for ($row = $startRow; $row <= $endRow; $row++) {
             // Obtener el día de la semana desde la celda B$row
             $dia = $sheet->getCell('B' . $row)->getValue();
-    
+
             // Obtener la fecha desde la celda C$row
             $fecha = $sheet->getCell('C' . $row)->getValue();
-    
+
             // Convertir la fecha a un objeto DateTime
             $fecha_obj = new DateTime($fecha);
-    
+
             // Obtener el nombre del día de la semana (en inglés)
             $nombre_dia = $fecha_obj->format('l');
-    
+
             // Mapear el nombre del día de la semana a su equivalente en español
             $dias_semana = [
                 'Monday' => 'Lunes',
@@ -143,13 +149,13 @@ class BoxDiariesExport implements FromCollection, WithStyles
                 'Saturday' => 'Sábado',
                 'Sunday' => 'Domingo'
             ];
-    
+
             // Obtener el nombre del día de la semana en español
             $nombre_dia_espanol = $dias_semana[$nombre_dia];
-    
+
             // Poner el nombre del día de la semana en la celda B$row
             $sheet->setCellValue('B' . $row, $nombre_dia_espanol);
-    
+
             // Si el día es sábado o domingo, colorear fondo en gris claro desde B hasta S
             if ($nombre_dia === 'Saturday' || $nombre_dia === 'Sunday') {
                 $sheet->getStyle('B' . $row . ':S' . $row)->applyFromArray([
@@ -195,7 +201,6 @@ class BoxDiariesExport implements FromCollection, WithStyles
         // Aplicar el mismo estilo a cualquier otra celda que necesite el fondo azul claro
         // ...
         // Cambiar el estilo de fondo para "Empresas de Seguridad" a azul claro
-        $sheet->getStyle('Q5')->applyFromArray($lightBlueStyle);
         $sheet->getStyle('C1:R1')->applyFromArray([
             'fill' => [
                 'fillType' => Fill::FILL_SOLID,
@@ -212,13 +217,12 @@ class BoxDiariesExport implements FromCollection, WithStyles
         $this->clearRow3($sheet);
         // Llamar a la función clearRow4
         $this->clearRow4($sheet);
-        // Combina las celdas A2 y R2
+
+        // Combina las celdas A2 y S2
         $sheet->mergeCells('A2:S2');
         // Establece el texto "Centro:" en las celdas combinadas
-        foreach ($this->collection() as $diarioCaja) {
-            // Establece el texto "Centro:" en las celdas combinadas
-            $sheet->setCellValue('A2', 'Centro: '. $diarioCaja->center);
-        }
+        $sheet->setCellValue('A2', 'Centro: ');// $this->typeCenter);
+
         // Aplica estilos al texto "Centro:"
         $sheet->getStyle('A2')->applyFromArray([
             'font' => [
@@ -234,10 +238,11 @@ class BoxDiariesExport implements FromCollection, WithStyles
                 'startColor' => ['argb' => '318CE7'], // Color azul oscuro
             ],
         ]);
-        // Combina las celdas A3 y R3
+
+        // Combina las celdas A3 y S3
         $sheet->mergeCells('A3:S3');
-        // Establece el texto "Centro:" en las celdas combinadas
-        $sheet->setCellValue('A3', 'Periodo:');
+        // Establece el texto "Periodo:" en las celdas combinadas
+        $sheet->setCellValue('A3', 'Periodo: ' );// . $this->startDate . ' - ' . $this->endDate);
         // Aplica estilos al texto "Centro:"
         $sheet->getStyle('A3')->applyFromArray([
             'font' => [
@@ -359,7 +364,6 @@ class BoxDiariesExport implements FromCollection, WithStyles
         $sheet->getStyle('F5')->applyFromArray([
             'font' => [
                 'bold' => true,
-                'color' => ['argb' => 'FF0000'], // Color rojo
             ],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
@@ -367,16 +371,12 @@ class BoxDiariesExport implements FromCollection, WithStyles
             ],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFFF00'], // Color amarillo
             ],
         ]);
         // Establece el texto "Tarjetas" en las celdas
         $sheet->setCellValue('G5', 'Tarjetas');
         // Aplica estilos al texto "Tarjetas"
         $sheet->getStyle('G5')->applyFromArray([
-            'font' => [
-                'color' => ['argb' => 'FF0000'], // Color rojo
-            ],
             'alignment' => [
                 'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
                 'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
@@ -522,7 +522,6 @@ class BoxDiariesExport implements FromCollection, WithStyles
             ],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFFF00'], // Color amarillo
             ],
         ]);
         // Establece el texto "Caja Fuerte Final" en las celdas
@@ -539,7 +538,6 @@ class BoxDiariesExport implements FromCollection, WithStyles
             ],
             'fill' => [
                 'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
-                'startColor' => ['argb' => 'FFFF00'], // Color amarillo
             ],
         ]);
         // Insertar datos de DiarioCaja
